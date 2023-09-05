@@ -38,6 +38,16 @@
 #define BSP_SCREEN_WIDTH     640U
 #define BSP_SCREEN_HEIGHT    480U
 
+#define HID_UP_MASK 	0x00
+#define HID_DOWN_MASK 	0xFF
+#define HID_LEFT_MASK 	0x00
+#define HID_RIGHT_MASK 	0xFF
+#define HID_A_MASK 		0x2F
+#define HID_B_MASK 		0x4F
+#define HID_SELECT_MASK	0x10
+#define HID_START_MASK 	0x20
+
+
 void BSP_init(void);
 void BSP_terminate(int16_t result);
 

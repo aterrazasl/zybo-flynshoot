@@ -72,15 +72,40 @@ int DVI_initDVI(void) {
 void Display_sendPA(uint32_t const *pa, uint16_t y, uint16_t h) {
 	uint32_t i, j, k;
 	uint32_t const *p = pa;
-//	uint16_t cmd;
 
-	/* Need to adjust start row by one because LS013B7DH03 starts
-	 * counting lines from 1, while the DISPLAY interface starts from 0.
-	 */
-//	++y;
-	for (i = y; i < DVI_VERTICAL; i++) {
+	for (i = y; i < DVI_VERTICAL; i += 1) {
 
-		for (j = 0; j < h; j += 32, p ++) {
+		for (j = 0; j < h; j += 32, p += 1) {
+
+			for (k = 0; k < 32; k++) {
+				if (*p & (1 << k)) {
+					setPixelColor(k + j, i, 0xff);
+				} else {
+					setPixelColor(k + j, i, 0x00);
+				}
+			}
+		}
+	}
+
+}
+
+void Display_sendPA_interleaved(uint32_t const *pa, uint16_t y, uint16_t h) {
+	uint32_t i, j, k;
+	uint32_t const *p = pa;
+	static uint32_t start=1;
+
+
+	if (start ==0){
+		start =1;
+		p+=20;
+	}
+	else
+	{
+		start =0;
+	}
+	for (i = y + start ; i < DVI_VERTICAL; i+=2) {
+
+		for (j = 0 ; j < h; j += 32, p+=1) {
 
 			for (k = 0; k < 32; k++) {
 				if (*p & (1 << k)) {
@@ -90,28 +115,7 @@ void Display_sendPA(uint32_t const *pa, uint16_t y, uint16_t h) {
 				}
 			}
 		}
+		p+=20;
 	}
 
-	/* Assert SCS */
-//	PAL_GpioPinOutSet(LCD_PORT_SCS, LCD_PIN_SCS);
-	/* SCS setup time: min 6us */
-//	PAL_TimerMicroSecondsDelay(6);
-	/* Send update command and first line address */
-//	cmd = LS013B7DH03_CMD_UPDATE | (y << 8);
-//	PAL_SpiTransmit((uint8_t *) &cmd, 2);
-	/* send pixels for all lines except the last... */
-//	for (i = 0; i < h - 1; ++i) {
-//		PAL_SpiTransmit((uint8_t *) p, LS013B7DH03_WIDTH / 8);
-//		p += (LS013B7DH03_WIDTH / 8);
-//		cmd = 0xFFU | ((y + i + 1) << 8);
-//		PAL_SpiTransmit((uint8_t *) &cmd, 2);
-//	}
-	/* send pixels for the last line */
-//	PAL_SpiTransmit((uint8_t *) p, LS013B7DH03_WIDTH / 8);
-//	cmd = 0xFFFFU;
-//	PAL_SpiTransmit((uint8_t *) &cmd, 2);
-	/* SCS hold time: min 2us */
-//	PAL_TimerMicroSecondsDelay(2);
-	/* De-assert SCS */
-//	PAL_GpioPinOutClear(LCD_PORT_SCS, LCD_PIN_SCS);
 }

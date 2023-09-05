@@ -10,6 +10,7 @@
 
 int DVI_initDVI(void);
 void Display_sendPA(uint32_t const *pa, uint16_t y, uint16_t h);
+void Display_sendPA_interleaved(uint32_t const *pa, uint16_t y, uint16_t h);
 
 void flushMem(void);
 

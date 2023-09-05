@@ -14,6 +14,17 @@
 #include "display/GFX.h"
 #include "stdlib.h"
 
+#include "hcd/hcd.h"
+#include "hcd/hcd_hw.h"
+#include "hcd/hid.h"
+
+
+extern XScuGic XScuGicInstance;
+//extern XScuGic xInterruptController; 	/* Interrupt controller instance */
+hcd_t* hcdPtr = NULL;
+TaskHandle_t tskConfigHandle;
+
+
 #define LEDBASE_DATA 0x41200000 + 8
 #define SWBASE_DATA  0x41200000 + 0
 #define LED_RED     (0)
@@ -100,6 +111,17 @@ void clearLED(u8 led) {
 	Xil_Out32(LEDBASE_DATA, Xil_In32(LEDBASE_DATA) & ~(1 << led));
 }
 
+static void configHWInterrupts(void *p) {
+	int status;
+
+	status = hcd_start(hcdPtr, &XScuGicInstance);// Start interrupts and handles the enumeration of devices registers interrupt handler
+	if (status == HCD_ERROR)
+		return;
+
+	hid_requestReport(hcdPtr);
+	vTaskDelete(tskConfigHandle);
+}
+
 void BSP_init(void) {
 
 	/* initialize the QS software tracing */
@@ -118,6 +140,19 @@ void BSP_init(void) {
 	QS_GLB_FILTER(QS_UA_RECORDS); /* all user records */
 
 	DVI_initDVI();
+
+
+    hcdPtr = hcd_init();   // Initialize pointers, Create memory refs and initialize HW
+//    if(hcdPtr == NULL) return HCD_ERROR;
+
+    hcd_connectClassHandler(hcdPtr, hid_callbackHandler, hcdPtr);
+//	if(status == HCD_ERROR) return status;
+
+	xTaskCreate((TaskFunction_t) configHWInterrupts, "initSW",
+			(short) configMINIMAL_STACK_SIZE, 0,
+			(BaseType_t) 2 | portPRIVILEGE_BIT, &tskConfigHandle);
+
+
 }
 
 void BSP_terminate(int16_t result) {
@@ -459,7 +494,9 @@ void BSP_updateScore(uint16_t score) {
 
 bool BSP_isThrottle(void) {
 	/* is the throttle button depressed? */
-	return (BSP_sw0_state() == 0x1);
+//	return (BSP_sw0_state() == 0x1);
+	char* hid_data = readHID_Data();
+	return ( *(hid_data + 4 ) == HID_UP_MASK );
 }
 bool BSP_doBitmapsOverlap(uint8_t bmp_id1, uint16_t x1, uint16_t y1,
 		uint8_t bmp_id2, uint16_t x2, uint16_t y2) {
@@ -655,83 +692,28 @@ void vApplicationTickHook(void) {
 	/* process time events for rate 0 */
 	QTIMEEVT_TICK_FROM_ISR(0U, &xHigherPriorityTaskWoken, &l_TickHook);
 
-	static uint8_t count=10;
-	if(count ==0){
-	QACTIVE_PUBLISH_FROM_ISR(&tickEvt, &xHigherPriorityTaskWoken,
-			&l_SysTick_Handler); /* publish to all subscribers */
-		count =10;
+	static uint8_t count = 5;
+	if (count == 0) {
+		QACTIVE_PUBLISH_FROM_ISR(&tickEvt, &xHigherPriorityTaskWoken,
+				&l_SysTick_Handler); /* publish to all subscribers */
+		count = 5;
+		hcd_enqueNextPeriodicQH(hcdPtr);
 	}
 	count--;
 
-	/* Perform the debouncing of buttons. The algorithm for debouncing
-	 * adapted from the book "Embedded Systems Dictionary" by Jack Ganssle
-	 * and Michael Barr, page 71.
-	 */
-	/* state of the button debouncing, see below */
-//	static struct ButtonsDebouncing {
-//		uint32_t depressed;
-//		uint32_t previous;
-//	} buttons = { 0U, 0U };
-//	uint32_t current = BSP_sw1_state(); //current = ~GPIOF_AHB->DATA_Bits[BTN_SW1 | BTN_SW2]; /* read SW1&SW2 */
-//	uint32_t tmp = buttons.depressed; /* save debounced depressed buttons */
-//	buttons.depressed |= (buttons.previous & current); /* set depressed */
-//	buttons.depressed &= (buttons.previous | current); /* clear released */
-//	buttons.previous = current; /* update the history */
-//	tmp ^= buttons.depressed; /* changed debounced depressed */
-//	if ((tmp & BTN_SW1) != 0U) { /* debounced SW1 state changed? */
-//		if ((buttons.depressed & BTN_SW1) != 0U) { /* is SW1 depressed? */
-//			/* demonstrate the "FromISR APIs:
-//			 * QACTIVE_PUBLISH_FROM_ISR() and Q_NEW_FROM_ISR()
-//			 */
-////            QACTIVE_PUBLISH_FROM_ISR(Q_NEW_FROM_ISR(QEvt, PAUSE_SIG),
-////                                &xHigherPriorityTaskWoken,
-////                                &l_TickHook);
-//		} else { /* the button is released */
-//			/* demonstrate the ISR APIs: POST_FROM_ISR and Q_NEW_FROM_ISR */
-//			QACTIVE_POST_FROM_ISR(AO_Tunnel,
-//					Q_NEW_FROM_ISR(QEvt, PLAYER_TRIGGER_SIG),
-//					&xHigherPriorityTaskWoken, &l_TickHook);
-//			QACTIVE_POST_FROM_ISR(AO_Ship,
-//					Q_NEW_FROM_ISR(QEvt, PLAYER_TRIGGER_SIG),
-//					&xHigherPriorityTaskWoken, &l_TickHook);
-//
-//		}
-//	}
-	{
-		/* state of the button debouncing, see below */
-		static struct ButtonsDebouncing {
-			uint32_t depressed;
-			uint32_t previous;
-		} buttons = { 0U, 0U };
-		uint32_t current;
-		uint32_t tmp;
-
-		/* Perform the debouncing of buttons. The algorithm for debouncing
-		 * adapted from the book "Embedded Systems Dictionary" by Jack Ganssle
-		 * and Michael Barr, page 71.
-		 */
-		current = BSP_sw_state(); /* read PB0 and BP1 */
-		tmp = buttons.depressed; /* save the debounced depressed buttons */
-		buttons.depressed |= (buttons.previous & current); /* set depressed */
-		buttons.depressed &= (buttons.previous | current); /* clear released */
-		buttons.previous = current; /* update the history */
-		tmp ^= buttons.depressed; /* changed debounced depressed */
-		if ((tmp & (1U << BTN_SW0)) != 0U) { /* debounced PB0 state changed? */
-			if ((buttons.depressed & (1U << BTN_SW0)) != 0U) {/*PB0 depressed?*/
-				static QEvt const trigEvt = { PLAYER_TRIGGER_SIG, 0U, 0U };
-				QACTIVE_PUBLISH_FROM_ISR(&trigEvt, &xHigherPriorityTaskWoken,
-						&l_SysTick_Handler);
-			}
-		}
+	char* hid_data = readHID_Data();
+	if (*(hid_data + 5) == HID_A_MASK) {
+		static QEvt const trigEvt = { PLAYER_TRIGGER_SIG, 0U, 0U };
+		QACTIVE_PUBLISH_FROM_ISR(&trigEvt, &xHigherPriorityTaskWoken,
+				&l_SysTick_Handler);
 	}
-
 	/* notify FreeRTOS to perform context switch from ISR, if needed */
 	portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
 }
 /*..........................................................................*/
-void vApplicationIdleHook(void) {}
+//void vApplicationIdleHook(void) {}
 
-void vApplicationIdleHook_disabled(void) {
+void vApplicationIdleHook(void) {
 	/* toggle the User LED on and then off, see NOTE01 */
 	QF_INT_DISABLE();
 	setLED(LED_BLUE);

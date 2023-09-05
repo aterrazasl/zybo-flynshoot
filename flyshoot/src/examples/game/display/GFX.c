@@ -62,9 +62,13 @@ int setPixelColor(int16_t x, int16_t y,uint8_t color) {
 	if (x >= 0 && x <   DisplayWidth && y >= 0 && y <  DisplayHeight) {
 //		buffer[ (x + y *  DisplayWidth)] |=  fontColor;
 
-		Xil_Out8(buffer + (x*3 + y *  DisplayWidth * 3 + 0) ,color);
-		Xil_Out8(buffer + (x*3 + y *  DisplayWidth * 3 + 1) ,color);
-		Xil_Out8(buffer + (x*3 + y *  DisplayWidth * 3 + 2) ,color);
+//		Xil_Out8(buffer + (x*3 + y *  DisplayWidth * 3 + 0) ,color);
+//		Xil_Out8(buffer + (x*3 + y *  DisplayWidth * 3 + 1) ,color);
+//		Xil_Out8(buffer + (x*3 + y *  DisplayWidth * 3 + 2) ,color);
+
+		u32 tmpColor = color==0?0:0xffffffff;
+
+		Xil_Out32(buffer + (x*3 + y *  DisplayWidth * 3 + 0) ,tmpColor);
 
 	}
 	return 0;

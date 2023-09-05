@@ -254,6 +254,7 @@ static QState Tunnel_initial(Tunnel * const me, void const * const par) {
 	QS_FUN_DICTIONARY(&Tunnel_screen_saver_show);
 	QS_FUN_DICTIONARY(&Tunnel_final);
 
+
 	return Q_TRAN(&Tunnel_show_logo);
 }
 

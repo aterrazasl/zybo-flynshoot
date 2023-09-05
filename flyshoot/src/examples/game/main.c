@@ -40,26 +40,6 @@ Q_DEFINE_THIS_FILE
 static QTicker l_ticker0; /* ticker active object for tick rate 0 */
 QActive *the_Ticker0 = &l_ticker0.super;
 
-void QTicker_ctor(QTicker * const me,
-    uint_fast8_t const tickRate)
-{
-//    static QActiveVtable const vtable = {  /* QActive virtual table */
-//        { &QTicker_init_,
-//          &QTicker_dispatch_
-//    #ifdef Q_SPY
-//          ,&QHsm_getStateHandler_
-//    #endif
-//        },
-//        &QActive_start_,
-//        &QTicker_post_,
-//        &QTicker_postLIFO_
-//    };
-    QActive_ctor(&me->super, Q_STATE_CAST(0)); /* superclass' ctor */
-//    me->super.super.vptr = &vtable.super; /* hook the vptr */
-//
-//    /* reuse eQueue.head for tick-rate */
-//    me->super.eQueue.head = (QEQueueCtr)tickRate;
-}
 static StackType_t tunnelStack[configMINIMAL_STACK_SIZE];
 static StackType_t missileStack[configMINIMAL_STACK_SIZE];
 static StackType_t shipStack[configMINIMAL_STACK_SIZE];
@@ -96,10 +76,6 @@ int main() {
     QS_SIG_DICTIONARY(GAME_OVER_SIG,      (void *)0);
 
     /* start the active objects... */
-//    QTicker_ctor(&l_ticker0, 0U); /* active object for tick rate 0 */
-//    QACTIVE_START(the_Ticker0,
-//                  1U,                /* QP priority */
-//				  tickerQueueSto, Q_DIM(tickerQueueSto), tickerStack, sizeof(tickerStack), 0);    /* no queue, no stack , no init. event */
     Tunnel_ctor_call();
     QACTIVE_START(AO_Tunnel,
                   2U,                /* QP priority */
