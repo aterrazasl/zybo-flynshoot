@@ -44,8 +44,34 @@ static StackType_t tunnelStack[configMINIMAL_STACK_SIZE];
 static StackType_t missileStack[configMINIMAL_STACK_SIZE];
 static StackType_t shipStack[configMINIMAL_STACK_SIZE];
 
+
+
+#define APP_CPU1_ADDR 0x2000000
+
+#define CPU1STARTADR 0xFFFFFFF0
+
+ void prepare2core_run_2()
+
+{
+
+xil_printf("Waking UP CPU1\r\n");
+
+//Disable cache on OCM
+
+Xil_SetTlbAttributes(0xFFFF0000,0x14de2);           // S=b1 TEX=b100 AP=b11, Domain=b1111, C=b0, B=b0
+
+Xil_Out32(CPU1STARTADR,APP_CPU1_ADDR);
+
+dmb();
+
+__asm__("sev");
+
+}
+
 /*..........................................................................*/
 int main() {
+	prepare2core_run_2();
+
     static QEvt const * missileQueueSto[2];
     static QEvt const * shipQueueSto[3];
     static QEvt const * tunnelQueueSto[GAME_MINES_MAX + 5];

@@ -1,6 +1,8 @@
 #include "hcd_hw.h"
 #include "hcd.h"
 #include "xscugic.h"
+#include "FreeRTOS.h"
+#include "portmacro.h"
 
 
 static hcd_t hcd;
@@ -981,7 +983,7 @@ static void hcd_enumerationStateMachine(hcd_t *hcdPtr){
 		}
 		else{
 			hcd_parseConfigurationDescriptor(hcdPtr);
-			hcd_printEP0();
+//			hcd_printEP0();
 			hcdPtr->state = hcd_getStatus;
 			hcd_sendSetupData(hcdPtr,hcd_createGetStatus());
 		}
@@ -1020,6 +1022,7 @@ static void hcd_enumerationStateMachine(hcd_t *hcdPtr){
 static void hcd_HostIntrHandler(void *HandlerRef)
 {
 
+	BaseType_t xHigherPriorityTaskWoken = 0;
 	hcd_t	*hcdPtr;
 
 	u32	IrqSts;
@@ -1057,6 +1060,8 @@ static void hcd_HostIntrHandler(void *HandlerRef)
 		}
 	}
 
+//	portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
+
 }
 
 static void hcd_UsbHostIntrHandler(void *CallBackRef, u32 Mask)
@@ -1072,14 +1077,14 @@ static void hcd_UsbHostIntrHandler(void *CallBackRef, u32 Mask)
 	hcd_t *hcdPtr = (hcd_t*)CallBackRef;
 
 	if(Mask & HCD_IXR_ULPI_MASK ){
-		xil_printf("[Interrupt] Register HCD_ULPIVIEW_OFFSET = %08X \r\n",hcd_ReadReg(hcdPtr->config.BaseAddress,	HCD_ULPIVIEW_OFFSET));
+//		xil_printf("[Interrupt] Register HCD_ULPIVIEW_OFFSET = %08X \r\n",hcd_ReadReg(hcdPtr->config.BaseAddress,	HCD_ULPIVIEW_OFFSET));
 	}
 
 	if(Mask & HCD_IXR_PC_MASK ){
 		u32 portStatus = hcd_ReadReg(hcdPtr->config.BaseAddress,HCD_PORTSCR1_OFFSET);
 
-		xil_printf("[Interrupt] Port changed... mask = %08X; count = %d\r\n",Mask,count);
-		xil_printf("[Interrupt] Register HCD_PORTSCR1_OFFSET = %08X \r\n",portStatus);
+//		xil_printf("[Interrupt] Port changed... mask = %08X; count = %d\r\n",Mask,count);
+//		xil_printf("[Interrupt] Register HCD_PORTSCR1_OFFSET = %08X \r\n",portStatus);
 
 		if(  (portStatus & HCD_PORTSCR_CCS_MASK) == HCD_PORTSCR_CCS_MASK ){
 			if(hcdPtr->deviceConnected ==0){
@@ -1101,19 +1106,19 @@ static void hcd_UsbHostIntrHandler(void *CallBackRef, u32 Mask)
 //		AsyncScheduleTransactionComplete =1;
 	}
 	if(Mask & HCD_IXR_UE_MASK ){
-		xil_printf("[Interrupt] Transaction Error.. mask = %08X; count = %d\r\n",Mask,count);
+//		xil_printf("[Interrupt] Transaction Error.. mask = %08X; count = %d\r\n",Mask,count);
 	}
 	if(Mask & HCD_IXR_HCH_MASK ){
 		HCD_IXR_HCH =1;
 		if (HCD_IXR_HCH > HCD_IXR_HCH_old){
-			xil_printf("[Interrupt] Host Controller Halted = 1.. mask = %08X; count = %d\r\n",Mask,count);
+//			xil_printf("[Interrupt] Host Controller Halted = 1.. mask = %08X; count = %d\r\n",Mask,count);
 			HCD_IXR_HCH_old = 1;
 		}
 	}
 	else{
 		HCD_IXR_HCH =0;
 		if (HCD_IXR_HCH < HCD_IXR_HCH_old){
-			xil_printf("[Interrupt] Host Controller Halted = 0.. mask = %08X; count = %d\r\n",Mask,count);
+//			xil_printf("[Interrupt] Host Controller Halted = 0.. mask = %08X; count = %d\r\n",Mask,count);
 			HCD_IXR_HCH_old = 0;
 		}
 	}

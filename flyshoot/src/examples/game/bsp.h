@@ -34,6 +34,9 @@
 #ifndef BSP_H
 #define BSP_H
 
+#include "xil_io.h"
+#include "xil_mmu.h"
+
 #define BSP_TICKS_PER_SEC    100U
 #define BSP_SCREEN_WIDTH     640U
 #define BSP_SCREEN_HEIGHT    480U

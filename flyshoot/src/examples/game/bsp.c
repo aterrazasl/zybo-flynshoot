@@ -139,18 +139,18 @@ void BSP_init(void) {
 	QS_GLB_FILTER(QS_AO_RECORDS); /* active object records */
 	QS_GLB_FILTER(QS_UA_RECORDS); /* all user records */
 
-	DVI_initDVI();
+//	DVI_initDVI();
 
 
-    hcdPtr = hcd_init();   // Initialize pointers, Create memory refs and initialize HW
-//    if(hcdPtr == NULL) return HCD_ERROR;
+//    hcdPtr = hcd_init();   // Initialize pointers, Create memory refs and initialize HW
+////    if(hcdPtr == NULL) return HCD_ERROR;
+//
+//    hcd_connectClassHandler(hcdPtr, hid_callbackHandler, hcdPtr);
+////	if(status == HCD_ERROR) return status;
 
-    hcd_connectClassHandler(hcdPtr, hid_callbackHandler, hcdPtr);
-//	if(status == HCD_ERROR) return status;
-
-	xTaskCreate((TaskFunction_t) configHWInterrupts, "initSW",
-			(short) configMINIMAL_STACK_SIZE, 0,
-			(BaseType_t) 2 | portPRIVILEGE_BIT, &tskConfigHandle);
+//	xTaskCreate((TaskFunction_t) configHWInterrupts, "initSW",
+//			(short) configMINIMAL_STACK_SIZE, 0,
+//			(BaseType_t) 2 | portPRIVILEGE_BIT, &tskConfigHandle);
 
 
 }
@@ -179,10 +179,16 @@ uint32_t BSP_random(void) { /* a very cheap pseudo-random-number generator */
 }
 
 void BSP_updateScreen(void) {
+	int i;
 	setLED(LED_DBG);
-	Display_sendPA(&l_fb[0][0], 0, BSP_SCREEN_WIDTH);
+//	Display_sendPA(&l_fb[0][0], 0, BSP_SCREEN_WIDTH);
+
+//	for(i= 0;i<10000000;i++){
+//		i=i;
+//	}
+//	printf("!!\r");
 	clearLED(LED_DBG);
-	flushMem();
+//	flushMem();
 }
 void BSP_clearFB(void) {
 	uint_fast8_t y, z;
@@ -692,16 +698,16 @@ void vApplicationTickHook(void) {
 	/* process time events for rate 0 */
 	QTIMEEVT_TICK_FROM_ISR(0U, &xHigherPriorityTaskWoken, &l_TickHook);
 
-	static uint8_t count = 5;
-	if (count == 0) {
+//	static uint8_t count = 1;
+//	if (count == 0) {
 		QACTIVE_PUBLISH_FROM_ISR(&tickEvt, &xHigherPriorityTaskWoken,
 				&l_SysTick_Handler); /* publish to all subscribers */
-		count = 5;
-		hcd_enqueNextPeriodicQH(hcdPtr);
-	}
-	count--;
+//		count = 1;
+//		hcd_enqueNextPeriodicQH(hcdPtr);
+//	}
+//	count--;
 
-	char* hid_data = readHID_Data();
+	char* hid_data = 0x00;//readHID_Data();
 	if (*(hid_data + 5) == HID_A_MASK) {
 		static QEvt const trigEvt = { PLAYER_TRIGGER_SIG, 0U, 0U };
 		QACTIVE_PUBLISH_FROM_ISR(&trigEvt, &xHigherPriorityTaskWoken,
